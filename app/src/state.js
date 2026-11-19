@@ -1,104 +1,131 @@
-// The cover's editable state: layout, grade, words, effects, and one crop per panel.
-// Photos live outside the snapshots (images are not serialisable); snapshots keep the
-// photo ids, and the photos themselves persist across undo and redo.
+// Cover state for Vice Coast Cover Lab: one plain object, plus undo/redo history.
+// A panel points at a photo by index and carries its own crop (zoom + pan offsets).
+// The title block, grade and layout are all part of the state so every change is undoable.
 
 export const LAYOUTS = ['grid4', 'hero3', 'fullbleed', 'nine'];
-export const GRADES = ['sunset', 'neon', 'vice', 'original'];
-export const SIZES = {
-  square: [1080, 1080],
-  portrait: [1080, 1350],
-  wide: [1920, 1080],
-  story: [1080, 1920],
+export const LAYOUT_LABELS = {
+  grid4: 'Four-panel grid',
+  hero3: 'Hero + three',
+  fullbleed: 'Full bleed',
+  nine: 'Nine-panel grid',
 };
 
-/** How many panels a layout shows. */
-export function panelCount(layout) {
-  return layout === 'fullbleed' ? 1 : layout === 'nine' ? 9 : 4;
-}
+export const GRADES = ['sunset', 'neon', 'vice', 'midnight'];
+export const GRADE_LABELS = {
+  sunset: 'Sunset',
+  neon: 'Neon nights',
+  vice: 'Vice City',
+  midnight: 'Midnight',
+};
 
-/** A fresh panel: no photo yet, centred, no zoom. */
-export function blankPanel() {
-  return { photoId: null, cx: 0, cy: 0, zoom: 1 };
-}
+export const EXPORT_SIZES = [
+  { id: 'square', label: 'Square 1080 × 1080', w: 1080, h: 1080 },
+  { id: 'portrait', label: 'Portrait 1080 × 1350', w: 1080, h: 1350 },
+  { id: 'wide', label: 'Wide 1920 × 1080', w: 1920, h: 1080 },
+  { id: 'story', label: 'Story 1080 × 1920', w: 1080, h: 1920 },
+];
 
-/** The default cover: four-panel grid, sunset grade, Vice Coast words. */
-export function createState() {
+/** A fresh cover: hero layout, sunset grade, two sample panels, five-star hype. */
+export function freshState() {
   return {
-    layout: 'grid4',
+    layout: 'hero3',
     grade: 'sunset',
-    title: 'SUNSET HEIST',
-    subtitle: 'Vice Coast nights',
+    title: 'Sunset Heist',
+    subtitle: 'one last ride down the coast',
     badge: 'VICE COAST',
-    heat: 4,
-    grain: true,
-    vignette: true,
-    size: 'square',
+    hype: 5,
+    sizeId: 'square',
     selectedPanel: 0,
-    selectedPhotoId: null,
-    panels: Array.from({ length: 9 }, blankPanel),
+    panels: [
+      { photo: 0, zoom: 1.15, ox: 0, oy: -0.04 },
+      { photo: 1, zoom: 1.15, ox: 0, oy: 0.28 },
+      { photo: 0, zoom: 1.3, ox: 0.08, oy: -0.05 },
+      { photo: 1, zoom: 1.3, ox: -0.06, oy: 0.3 },
+      { photo: 0, zoom: 1.5, ox: -0.1, oy: -0.12 },
+      { photo: 1, zoom: 1.5, ox: 0.1, oy: 0.05 },
+      { photo: 0, zoom: 1.6, ox: 0.12, oy: -0.02 },
+      { photo: 1, zoom: 1.4, ox: -0.12, oy: -0.08 },
+      { photo: 0, zoom: 1.45, ox: 0, oy: 0.08 },
+    ],
   };
 }
 
-/** A JSON-safe copy of everything undo/redo needs (photos excluded). */
-export function snapshot(state) {
-  return JSON.parse(JSON.stringify({
-    layout: state.layout,
-    grade: state.grade,
-    title: state.title,
-    subtitle: state.subtitle,
-    badge: state.badge,
-    heat: state.heat,
-    grain: state.grain,
-    vignette: state.vignette,
-    size: state.size,
-    selectedPanel: state.selectedPanel,
-    panels: state.panels,
-  }));
+/** Deep copy of a state object, for history snapshots. */
+export function cloneState(state) {
+  return JSON.parse(JSON.stringify(state));
 }
 
-/** Restores a snapshot taken by `snapshot` into `state` in place. */
-export function restore(state, snap) {
-  state.layout = snap.layout;
-  state.grade = snap.grade;
-  state.title = snap.title;
-  state.subtitle = snap.subtitle;
-  state.badge = snap.badge;
-  state.heat = snap.heat;
-  state.grain = snap.grain;
-  state.vignette = snap.vignette;
-  state.size = snap.size;
-  state.selectedPanel = snap.selectedPanel;
-  state.panels = snap.panels.map((p) => ({ ...p }));
+/** Undo/redo history over state snapshots. */
+export function makeHistory(initial) {
+  let past = [];
+  let future = [];
+  let current = cloneState(initial);
+  return {
+    get current() { return current; },
+    push(next) {
+      past.push(current);
+      if (past.length > 60) past.shift();
+      future = [];
+      current = cloneState(next);
+    },
+    /** Replaces the current state without adding a history entry (live slider drags). */
+    replace(next) {
+      current = cloneState(next);
+    },
+    /** Commits an edit whose starting point was captured before live changes began. */
+    commitFrom(before, after) {
+      past.push(cloneState(before));
+      if (past.length > 60) past.shift();
+      future = [];
+      current = cloneState(after);
+    },
+    undo() {
+      if (!past.length) return null;
+      future.push(current);
+      current = past.pop();
+      return cloneState(current);
+    },
+    redo() {
+      if (!future.length) return null;
+      past.push(current);
+      current = future.pop();
+      return cloneState(current);
+    },
+    canUndo() { return past.length > 0; },
+    canRedo() { return future.length > 0; },
+  };
 }
 
-/** Undo/redo over snapshots: push before a change, undo/redo around it. */
-export class History {
-  constructor(state) {
-    this.state = state;
-    this.past = [];
-    this.future = [];
+/** Panel rectangles for a layout, as fractions of the cover (x, y, w, h). */
+export function panelRects(layout) {
+  if (layout === 'fullbleed') return [{ x: 0, y: 0, w: 1, h: 1 }];
+  if (layout === 'grid4') {
+    return [
+      { x: 0, y: 0, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0, w: 0.5, h: 0.5 },
+      { x: 0, y: 0.5, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0.5, w: 0.5, h: 0.5 },
+    ];
   }
-
-  push() {
-    this.past.push(snapshot(this.state));
-    if (this.past.length > 60) this.past.shift();
-    this.future.length = 0;
+  if (layout === 'nine') {
+    const cells = [];
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        cells.push({ x: col / 3, y: row / 3, w: 1 / 3, h: 1 / 3 });
+      }
+    }
+    return cells;
   }
+  // hero3: one tall hero on the left, three stacked on the right.
+  return [
+    { x: 0, y: 0, w: 0.62, h: 1 },
+    { x: 0.62, y: 0, w: 0.38, h: 1 / 3 },
+    { x: 0.62, y: 1 / 3, w: 0.38, h: 1 / 3 },
+    { x: 0.62, y: 2 / 3, w: 0.38, h: 1 / 3 },
+  ];
+}
 
-  undo() {
-    if (!this.past.length) return false;
-    this.future.push(snapshot(this.state));
-    restore(this.state, this.past.pop());
-    return true;
-  }
-
-  redo() {
-    if (!this.future.length) return false;
-    this.past.push(snapshot(this.state));
-    restore(this.state, this.future.pop());
-    return true;
-  }
-
-  get canUndo() { return this.past.length > 0; }
-  get canRedo() { return this.future.length > 0; }
+/** How many panels a layout shows. */
+export function panelCount(layout) {
+  return panelRects(layout).length;
 }

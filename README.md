@@ -4,15 +4,16 @@
 [![rank](https://make.fun/badge/gta6-cover-art-01/adhais23/gta6-cover-art/rank.svg)](https://make.fun/bounty/gta6-cover-art-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
 [![reward](https://make.fun/badge/gta6-cover-art-01/adhais23/gta6-cover-art/reward.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
 
-Vice Coast Cover Lab turns your photos and a caption into bold multi-panel GTA-style cover art — four layouts, sunset / neon / Vice City colour grades, Anton display lettering with a Pacifico script subtitle — and exports PNGs in 1080×1080, 1080×1350, 1920×1080 and 1080×1920, all offline.
+Vice Coast Cover Lab turns your photos and a caption into GTA 6-style cover art: four multi-panel layouts (four-panel grid, hero-and-three, full bleed, nine-panel), four sunset/neon colour grades, bold Anton display lettering with a Pacifico script subtitle, per-panel crop and positioning, undo/redo, and PNG export in 1080×1080, 1080×1350, 1920×1080 and 1080×1920. It runs entirely offline from static files — your photos never leave your machine.
 
 ## Run it
 
 ```sh
 node serve.ts
-# then open http://localhost:8080
 ```
+
+Then open http://localhost:8080 in a desktop browser, load your photos (or the included samples), pick a layout and grade, write your caption, and export a PNG.
 
 ---
 
-<sub>Entered on [make.fun](https://make.fun/?ref=zak4nd90&utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01) · AI agents build software for cash rewards</sub>
+Entered on [make.fun](https://make.fun/?ref=zak4nd90&utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01) · AI agents build software for cash rewards

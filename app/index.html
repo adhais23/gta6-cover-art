@@ -3,87 +3,78 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vice Coast Cover Lab — GTA-style cover art maker</title>
+<title>Vice Coast Cover Lab — GTA 6-style cover maker</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">
-    <h1>VICE COAST <span>Cover Lab</span></h1>
-    <p>Turn your photo + a caption into bold multi-panel cover art. 100% offline — your photos never leave this machine.</p>
-  </div>
-  <div class="history">
-    <button id="undo" type="button" disabled>↶ Undo</button>
-    <button id="redo" type="button" disabled>↷ Redo</button>
-  </div>
-</header>
 <main class="app">
-  <section class="stage">
-    <canvas id="cover" width="1080" height="1080" aria-label="Live cover preview"></canvas>
-    <div class="panel-strip" id="panelStrip" aria-label="Panels"></div>
-    <p class="hint">Click a panel to select it, drag inside it to move the photo, scroll to zoom. Click a photo below to put it in the selected panel.</p>
-  </section>
-  <aside class="controls">
-    <section class="group">
-      <h2>1 · Photos</h2>
-      <label class="file-btn">Add your photos
-        <input id="photoInput" type="file" accept="image/*" multiple>
+  <section class="controls" aria-label="Cover controls">
+    <h1>Vice Coast Cover Lab</h1>
+    <p class="tagline">Your photos, a bold caption, a Vice City grade — a cover ready to post.</p>
+
+    <fieldset>
+      <legend>Photos</legend>
+      <label class="file-label">Add your photos
+        <input id="photoFiles" type="file" accept="image/*" multiple>
       </label>
-      <div class="samples">
-        <button id="sampleBoulevard" type="button">Sample: Boulevard</button>
-        <button id="samplePier" type="button">Sample: Pier</button>
-        <button id="fillAll" type="button">Fill all panels with selected photo</button>
-      </div>
-      <div class="tray" id="photoTray" aria-label="Loaded photos"></div>
-    </section>
-    <section class="group">
-      <h2>2 · Layout</h2>
-      <div class="choices" id="layoutChoices">
-        <button type="button" data-layout="grid4" class="active">4-panel grid</button>
-        <button type="button" data-layout="hero3">Hero + three</button>
-        <button type="button" data-layout="fullbleed">Full-bleed</button>
-        <button type="button" data-layout="nine">9-panel grid</button>
-      </div>
-    </section>
-    <section class="group">
-      <h2>3 · Colour grade</h2>
-      <div class="choices" id="gradeChoices">
-        <button type="button" data-grade="sunset" class="active">Sunset</button>
-        <button type="button" data-grade="neon">Neon</button>
-        <button type="button" data-grade="vice">Vice City</button>
-        <button type="button" data-grade="original">Original</button>
-      </div>
-    </section>
-    <section class="group">
-      <h2>4 · Words</h2>
-      <label>Title <input id="title" type="text" maxlength="32" value="SUNSET HEIST"></label>
-      <label>Subtitle <input id="subtitle" type="text" maxlength="40" value="Vice Coast nights"></label>
-      <label>Badge <input id="badge" type="text" maxlength="18" value="VICE COAST"></label>
-      <label>Heat <span class="heat-wrap"><input id="heat" type="range" min="1" max="5" step="1" value="4"><span id="heatStars" aria-label="Heat stars">★★★★☆</span></span></label>
-    </section>
-    <section class="group">
-      <h2>5 · Finish</h2>
-      <label class="check"><input id="grain" type="checkbox" checked> Film grain</label>
-      <label class="check"><input id="vignette" type="checkbox" checked> Vignette</label>
-      <div class="panel-tools">
-        <button id="zoomOut" type="button">− Zoom</button>
-        <button id="zoomIn" type="button">+ Zoom</button>
-        <button id="fitPanel" type="button">Fit photo</button>
-      </div>
-    </section>
-    <section class="group export">
-      <h2>6 · Export PNG</h2>
-      <div class="choices" id="sizeChoices">
-        <button type="button" data-size="square" class="active">1080 × 1080</button>
-        <button type="button" data-size="portrait">1080 × 1350</button>
-        <button type="button" data-size="wide">1920 × 1080</button>
-        <button type="button" data-size="story">1080 × 1920</button>
-      </div>
-      <button id="export" type="button" class="export-btn">Export PNG</button>
-      <p id="status" role="status"></p>
-    </section>
-  </aside>
+      <button id="loadSamples" type="button">Use the sample photos</button>
+      <div id="photoStrip" class="strip" aria-label="Loaded photos"></div>
+      <p class="hint">Click a thumbnail to put that photo in the selected panel.</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Layout</legend>
+      <div id="layoutPicker" class="picker"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Colour grade</legend>
+      <div id="gradePicker" class="picker"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Caption</legend>
+      <label>Title <input id="title" type="text" maxlength="24" value="Sunset Heist"></label>
+      <label>Subtitle <input id="subtitle" type="text" maxlength="60" value="one last ride down the coast"></label>
+      <label>Badge <input id="badge" type="text" maxlength="16" value="VICE COAST"></label>
+      <label>Hype <span class="range-row"><input id="hype" type="range" min="0" max="5" step="1" value="5"><output id="hypeOut">5 / 5</output></span></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Crop the selected panel</legend>
+      <p id="panelLabel" class="hint">Panel 1 of 4</p>
+      <div id="panelDots" class="dots" aria-label="Choose a panel"></div>
+      <label>Photo in panel
+        <select id="panelPhoto">
+          <option value="0">Photo 1</option>
+          <option value="1">Photo 2</option>
+          <option value="2">Photo 3</option>
+          <option value="3">Photo 4</option>
+        </select>
+      </label>
+      <label>Zoom <span class="range-row"><input id="zoom" type="range" min="1" max="2.5" step="0.05" value="1.15"><output id="zoomOut">115%</output></span></label>
+      <label>Pan left–right <input id="panX" type="range" min="-0.4" max="0.4" step="0.02" value="0"></label>
+      <label>Pan up–down <input id="panY" type="range" min="-0.4" max="0.4" step="0.02" value="0"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Export size</legend>
+      <div id="sizePicker" class="picker"></div>
+    </fieldset>
+
+    <div class="actions">
+      <button id="undo" type="button">Undo</button>
+      <button id="redo" type="button">Redo</button>
+      <button id="export" type="button" class="primary">Export PNG</button>
+    </div>
+    <p id="status" role="status"></p>
+    <p class="fineprint">Original art made from your photos. No Rockstar logo, artwork or font. Display type: Anton, Bebas Neue and Pacifico under the SIL Open Font License.</p>
+  </section>
+  <section class="preview" aria-label="Cover preview">
+    <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
+    <p class="hint">Click a panel on the cover to select it for cropping.</p>
+  </section>
 </main>
 <script type="module" src="./src/main.js"></script>
 </body>
